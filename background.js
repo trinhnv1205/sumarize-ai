@@ -1,5 +1,3 @@
-// background.js
-
 const settings = {
     language: 'vi',  // Default to Vietnamese
     length: 'short'  // Default to short
