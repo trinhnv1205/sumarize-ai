@@ -28,7 +28,7 @@
 }
 
 #my-popup button:hover {
-    color: #007bff; /* Highlight color on hover */
+    color: #4caf50; /* Highlight color on hover */
 }
 
 #my-popup .close-btn {
@@ -67,7 +67,7 @@
 }
 
 #popup-content a {
-    color: #007bff;
+    color: #4caf50;
     text-decoration: none;
 }
 
@@ -86,7 +86,7 @@
     padding: 0.5rem 1rem;
     right: 20px;
     top: 50%;
-    background-color: #007bff;
+    background-color: #4caf50;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -99,7 +99,7 @@
 }
 
 #show-popup-button:hover {
-    background-color: #0056b3;
+    background-color: #4caf50;
 }
 
 #show-popup-button i {
@@ -113,7 +113,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 24px;
-    color: #007bff;
+    color: #4caf50;
 }
 
 #loading-spinner i {
@@ -141,7 +141,7 @@
 }
 
 .translate-btn:hover {
-    color: #007bff; /* Change color on hover */
+    color: #4caf50; /* Change color on hover */
 }
 
 #language-select {
@@ -167,13 +167,13 @@
 }
 
 #popup-content ul {
-    list-style-type: none;
+    list-style-type: disc;
     padding: 0;
     margin: 0;
 }
 
 #popup-content li {
-    background: #f9f9f9;
+    /* background: #f9f9f9; */
     margin: 0.5rem 0;
     padding: 0.5rem;
     border-radius: 8px;

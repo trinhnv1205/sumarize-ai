@@ -1,3 +1,4 @@
+// Element Creation Functions
 function createLoadingSpinner() {
   const spinner = document.createElement("div");
   spinner.id = "loading-spinner";
@@ -80,6 +81,80 @@ function createTranslateButton(popupContainer) {
   popupContainer.appendChild(button);
 }
 
+function createLanguageSelect(popupContainer) {
+  const select = document.createElement("select");
+  select.id = "language-select";
+  select.className = "language-select";
+
+  const languages = [
+    { code: "en", name: "English" },
+    { code: "vi", name: "Vietnamese" },
+    // { code: "es", name: "Spanish" },
+    // { code: "fr", name: "French" },
+    // { code: "de", name: "German" },
+  ];
+
+  languages.forEach((lang) => {
+    const option = document.createElement("option");
+    option.value = lang.code;
+    option.textContent = lang.name;
+    select.appendChild(option);
+  });
+
+  const savedLanguage = localStorage.getItem("selected-language");
+  if (savedLanguage) {
+    select.value = savedLanguage;
+  }
+
+  select.addEventListener("change", () => {
+    localStorage.setItem("selected-language", select.value);
+  });
+
+  popupContainer.appendChild(select);
+}
+
+// Utility Functions
+function makeDraggable(element) {
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  element.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    offsetX = e.clientX - element.getBoundingClientRect().left;
+    offsetY = e.clientY - element.getBoundingClientRect().top;
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  });
+
+  function onMouseMove(e) {
+    if (isDragging) {
+      const newX = e.clientX - offsetX;
+      const newY = e.clientY - offsetY;
+      element.style.left = `${Math.max(0, newX)}px`;
+      element.style.top = `${Math.max(0, newY)}px`;
+      element.style.bottom = "auto";
+      element.style.right = "auto";
+    }
+  }
+
+  function onMouseUp() {
+    isDragging = false;
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+
+    localStorage.setItem("popup-left", element.style.left);
+    localStorage.setItem("popup-top", element.style.top);
+  }
+}
+
+function hidePopup() {
+  const popup = document.getElementById("popup");
+  if (popup) {
+    popup.style.display = "none";
+  }
+}
+
+// Main Logic Functions
 function fetchData() {
   const targetLanguage = localStorage.getItem("selected-language") || "vi";
 
@@ -178,78 +253,7 @@ function translateText(text) {
   }
 }
 
-function createLanguageSelect(popupContainer) {
-  const select = document.createElement("select");
-  select.id = "language-select";
-  select.className = "language-select";
-
-  const languages = [
-    { code: "en", name: "English" },
-    { code: "vi", name: "Vietnamese" },
-    // { code: "es", name: "Spanish" },
-    // { code: "fr", name: "French" },
-    // { code: "de", name: "German" },
-  ];
-
-  languages.forEach((lang) => {
-    const option = document.createElement("option");
-    option.value = lang.code;
-    option.textContent = lang.name;
-    select.appendChild(option);
-  });
-
-  const savedLanguage = localStorage.getItem("selected-language");
-  if (savedLanguage) {
-    select.value = savedLanguage;
-  }
-
-  select.addEventListener("change", () => {
-    localStorage.setItem("selected-language", select.value);
-  });
-
-  popupContainer.appendChild(select);
-}
-
-function makeDraggable(element) {
-  let isDragging = false;
-  let offsetX, offsetY;
-
-  element.addEventListener("mousedown", (e) => {
-    isDragging = true;
-    offsetX = e.clientX - element.getBoundingClientRect().left;
-    offsetY = e.clientY - element.getBoundingClientRect().top;
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  });
-
-  function onMouseMove(e) {
-    if (isDragging) {
-      const newX = e.clientX - offsetX;
-      const newY = e.clientY - offsetY;
-      element.style.left = `${Math.max(0, newX)}px`;
-      element.style.top = `${Math.max(0, newY)}px`;
-      element.style.bottom = "auto";
-      element.style.right = "auto";
-    }
-  }
-
-  function onMouseUp() {
-    isDragging = false;
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
-
-    localStorage.setItem("popup-left", element.style.left);
-    localStorage.setItem("popup-top", element.style.top);
-  }
-}
-
-function hidePopup() {
-  const popup = document.getElementById("popup");
-  if (popup) {
-    popup.style.display = "none";
-  }
-}
-
+// Initialization
 (function initializePopup() {
   const cssLink = document.createElement("link");
   cssLink.rel = "stylesheet";
