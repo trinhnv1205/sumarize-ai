@@ -166,7 +166,7 @@ function fetchData() {
 
   document.getElementById("loading-spinner").style.display = "block";
 
-  fetch("https://ai-proxy-31b697729d07.herokuapp.com/api/generate_summary", {
+  fetch("[YOUR API]/api/generate_summary", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
