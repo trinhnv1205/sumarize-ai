@@ -70,17 +70,6 @@ function createShowPopupButton(popupContainer) {
   return button;
 }
 
-function createTranslateButton(popupContainer) {
-  const button = document.createElement("button");
-  button.innerHTML = "🌐";
-  button.className = "translate-btn";
-  button.addEventListener("click", () => {
-    const text = document.getElementById("popup-content").textContent;
-    translateText(text);
-  });
-  popupContainer.appendChild(button);
-}
-
 function createLanguageSelect(popupContainer) {
   const select = document.createElement("select");
   select.id = "language-select";
@@ -218,39 +207,6 @@ function fetchData() {
         "Error fetching data";
       document.getElementById("loading-spinner").style.display = "none";
     });
-}
-
-function translateText(text) {
-  document.getElementById("loading-spinner").style.display = "block";
-
-  const targetLanguage = localStorage.getItem("selected-language") || "vi";
-
-  if (chrome.runtime && chrome.runtime.sendMessage) {
-    try {
-      chrome.runtime.sendMessage(
-        {
-          action: "fetchData",
-          url: "https://script.google.com/macros/s/AKfycbwLyNm0QfFr5Ndm6P-JSaOByPTryhlHK9SYjsaoMAc5zsUO5zb8AZgf7vE7KzP3naRv/exec?path=translate",
-          data: { text: text, target_language: targetLanguage },
-        },
-        (response) => {
-          if (response.error) {
-            console.error("Error:", response.error);
-            document.getElementById("popup-content").textContent =
-              "Error translating text";
-          } else {
-            document.getElementById("popup-content").innerHTML =
-              response.data.translation || "Translation failed";
-          }
-          document.getElementById("loading-spinner").style.display = "none";
-        }
-      );
-    } catch (error) {
-      document.getElementById("popup-content").textContent =
-        "Error translating text";
-      document.getElementById("loading-spinner").style.display = "none";
-    }
-  }
 }
 
 // Initialization
