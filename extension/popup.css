@@ -1,0 +1,50 @@
+/* Material Design Typography */
+body {
+  width: 40rem;
+  height: max-content;
+  font-family: "Roboto", sans-serif;
+  margin: 0;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow: auto;
+  background-color: #f4f4f9;
+  color: #333;
+}
+
+.header {
+  background-color: #4caf50;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  /* font-size: 1.5rem; */
+  font-weight: bold;
+  border-bottom: 2px solid #388e3c;
+}
+
+.content {
+  padding: 1rem;
+}
+
+.content p {
+  margin: 1rem 0;
+  line-height: 1.6;
+}
+
+.link {
+  color: #4caf50;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+a {
+  color: #4caf50;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
