@@ -62,47 +62,34 @@ function createShowPopupButton(popupContainer) {
   button.id = "show-popup-button";
   button.className = "material-icon-button";
   button.innerHTML = "👁️";
-  button.addEventListener("click", () => {
-    popupContainer.style.display = "block";
-    document.getElementById("loading-spinner").style.display = "block";
-    fetchData();
+
+  let isDragging = false;
+
+  button.addEventListener("mousedown", (e) => {
+    isDragging = false;
+    const onMouseMove = () => {
+      isDragging = true;
+    };
+    document.addEventListener("mousemove", onMouseMove);
+
+    button.addEventListener(
+      "mouseup",
+      () => {
+        document.removeEventListener("mousemove", onMouseMove);
+        if (!isDragging) {
+          popupContainer.style.display = "block";
+          document.getElementById("loading-spinner").style.display = "block";
+          fetchData();
+        }
+      },
+      { once: true }
+    );
   });
+
+  makeDraggable(button); // Make the button draggable
   return button;
 }
 
-function createLanguageSelect(popupContainer) {
-  const select = document.createElement("select");
-  select.id = "language-select";
-  select.className = "language-select";
-
-  const languages = [
-    { code: "en", name: "English" },
-    { code: "vi", name: "Vietnamese" },
-    // { code: "es", name: "Spanish" },
-    // { code: "fr", name: "French" },
-    // { code: "de", name: "German" },
-  ];
-
-  languages.forEach((lang) => {
-    const option = document.createElement("option");
-    option.value = lang.code;
-    option.textContent = lang.name;
-    select.appendChild(option);
-  });
-
-  const savedLanguage = localStorage.getItem("selected-language");
-  if (savedLanguage) {
-    select.value = savedLanguage;
-  }
-
-  select.addEventListener("change", () => {
-    localStorage.setItem("selected-language", select.value);
-  });
-
-  popupContainer.appendChild(select);
-}
-
-// Utility Functions
 function makeDraggable(element) {
   let isDragging = false;
   let offsetX, offsetY;
@@ -131,9 +118,47 @@ function makeDraggable(element) {
     document.removeEventListener("mousemove", onMouseMove);
     document.removeEventListener("mouseup", onMouseUp);
 
-    localStorage.setItem("popup-left", element.style.left);
-    localStorage.setItem("popup-top", element.style.top);
+    localStorage.setItem("button-left", element.style.left);
+    localStorage.setItem("button-top", element.style.top);
   }
+}
+
+function createLanguageSelect(popupContainer) {
+  const select = document.createElement("select");
+  select.id = "language-select";
+  select.className = "language-select";
+
+  const languages = [
+    { code: "en", name: "English" },
+    { code: "vi", name: "Vietnamese" },
+    // { code: "es", name: "Spanish" },
+    // { code: "fr", name: "French" },
+    // { code: "de", name: "German" },
+  ];
+
+  languages.forEach((lang) => {
+    const option = document.createElement("option");
+    option.value = lang.code;
+    option.textContent = lang.name;
+    select.appendChild(option);
+  });
+
+  // Load the saved language from the background script
+  chrome.runtime.sendMessage({ command: "loadLanguage" }, (response) => {
+    if (response && response.language) {
+      select.value = response.language;
+    }
+  });
+
+  select.addEventListener("change", () => {
+    // Save the selected language to the background script
+    chrome.runtime.sendMessage({
+      command: "saveLanguage",
+      language: select.value,
+    });
+  });
+
+  popupContainer.appendChild(select);
 }
 
 function hidePopup() {
@@ -145,68 +170,74 @@ function hidePopup() {
 
 // Main Logic Functions
 function fetchData() {
-  const targetLanguage = localStorage.getItem("selected-language") || "vi";
+  // load the selected language from the background script
+  chrome.runtime.sendMessage({ command: "loadLanguage" }, (response) => {
+    let targetLanguage = "en";
+    if (response && response.language) {
+      targetLanguage = response.language;
+    }
 
-  const data = {
-    title: document.title + "[Tóm tắt trừ 2 đến 4 dòng]",
-    text: document.body.innerText,
-    language: targetLanguage,
-  };
+    const data = {
+      title: document.title + "[Tóm tắt trừ 2 đến 4 dòng]",
+      text: document.body.innerText,
+      language: targetLanguage,
+    };
 
-  document.getElementById("loading-spinner").style.display = "block";
+    document.getElementById("loading-spinner").style.display = "block";
 
-  fetch("[YOUR API]/api/generate_summary", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
-  })
-    .then((response) => response.text())
-    .then((response) => {
-      document.getElementById("loading-spinner").style.display = "none";
-      const lines = response.split("\n").filter((line) => line.trim() !== "");
-      const ul = document.createElement("ul");
-      document.getElementById("popup-content").innerHTML = "";
-      document.getElementById("popup-content").appendChild(ul);
+    fetch("*****/api/generate_summary", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then((response) => response.text())
+      .then((response) => {
+        document.getElementById("loading-spinner").style.display = "none";
+        const lines = response.split("\n").filter((line) => line.trim() !== "");
+        const ul = document.createElement("ul");
+        document.getElementById("popup-content").innerHTML = "";
+        document.getElementById("popup-content").appendChild(ul);
 
-      let index = 0;
-      function addLine() {
-        if (index < lines.length) {
-          const li = document.createElement("li");
-          ul.appendChild(li);
-          li.classList.add("show");
-          addWords(li, lines[index].split(" "), () => {
-            index++;
-            setTimeout(addLine, 500); // Adjust the delay as needed
-          });
-        } else {
-          document.getElementById("loading-spinner").style.display = "none";
-        }
-      }
-
-      function addWords(li, words, callback) {
-        let wordIndex = 0;
-        function addWord() {
-          if (wordIndex < words.length) {
-            li.textContent += (wordIndex > 0 ? " " : "") + words[wordIndex];
-            wordIndex++;
-            setTimeout(addWord, 50); // Adjust the delay as needed
+        let index = 0;
+        function addLine() {
+          if (index < lines.length) {
+            const li = document.createElement("li");
+            ul.appendChild(li);
+            li.classList.add("show");
+            addWords(li, lines[index].split(" "), () => {
+              index++;
+              setTimeout(addLine, 500); // Adjust the delay as needed
+            });
           } else {
-            callback();
+            document.getElementById("loading-spinner").style.display = "none";
           }
         }
-        addWord();
-      }
 
-      addLine();
-    })
-    .catch((error) => {
-      console.error("Error fetching data:", error);
-      document.getElementById("popup-content").textContent =
-        "Error fetching data";
-      document.getElementById("loading-spinner").style.display = "none";
-    });
+        function addWords(li, words, callback) {
+          let wordIndex = 0;
+          function addWord() {
+            if (wordIndex < words.length) {
+              li.textContent += (wordIndex > 0 ? " " : "") + words[wordIndex];
+              wordIndex++;
+              setTimeout(addWord, 50); // Adjust the delay as needed
+            } else {
+              callback();
+            }
+          }
+          addWord();
+        }
+
+        addLine();
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        document.getElementById("popup-content").textContent =
+          "Error fetching data";
+        document.getElementById("loading-spinner").style.display = "none";
+      });
+  });
 }
 
 // Initialization
