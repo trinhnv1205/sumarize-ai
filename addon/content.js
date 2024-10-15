@@ -1,6 +1,3 @@
-const appscriptId =
-  "AKfycbzraj9CfqqYLSLgTITLv6nYQfKkFgee1vVXDeHCwyW9NpXzPh6zQGmam1VLnt2PfxT7";
-
 function saveSelectedLanguage(language) {
   console.log("saveSelectedLanguage:", language);
   browser.runtime.sendMessage({
@@ -97,10 +94,10 @@ function fetchWithRetry(url, options, retries = 5, delay = 1000) {
     const attemptFetch = (n) => {
       fetch(url, options)
         .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return response.json();
+          // if (!response.ok) {
+          //   throw new Error("Network response was not ok");
+          // }
+          return response.text();
         })
         .then((data) => resolve(data))
         .catch((error) => {
@@ -119,10 +116,8 @@ function fetchWithRetry(url, options, retries = 5, delay = 1000) {
 
 function summarizeText() {
   let targetLanguage = document.getElementById("language-select").value;
-  let targetLength = document.getElementById("length-select").value;
-  console.log("fetchData:", targetLanguage, targetLength);
 
-  const endpoint = `https://script.google.com/macros/s/${appscriptId}/exec?path=summarize`;
+  const endpoint = `https://ai-proxy-31b697729d07.herokuapp.com/api/generate_summary`;
 
   const options = {
     method: "POST",
@@ -130,32 +125,50 @@ function summarizeText() {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      title: document.title + "[Tóm tắt trừ 2 đến 4 dòng]",
       text: document.body.innerText,
-      target_language: targetLanguage,
-      target_length: targetLength,
+      language: targetLanguage,
     }),
   };
 
   fetchWithRetry(endpoint, options)
-    .then((data) => {
-      const popupContent = document.getElementById("popup-content");
-      popupContent.textContent = ""; // Clear existing content
+    .then((response) => {
+      document.getElementById("loading-spinner").style.display = "none";
+      const lines = response.split("\n").filter((line) => line.trim() !== "");
+      const ul = document.createElement("ul");
+      document.getElementById("popup-content").innerHTML = "";
+      document.getElementById("popup-content").appendChild(ul);
 
-      // Parse and display the JSON response
-      const summaryData = data.summary;
-      const title = document.createElement("h1");
-      title.textContent = summaryData.title;
-      popupContent.appendChild(title);
+      let index = 0;
+      function addLine() {
+        if (index < lines.length) {
+          const li = document.createElement("li");
+          ul.appendChild(li);
+          li.classList.add("show");
+          addWords(li, lines[index].split(" "), () => {
+            index++;
+            setTimeout(addLine, 500); // Adjust the delay as needed
+          });
+        } else {
+          document.getElementById("loading-spinner").style.display = "none";
+        }
+      }
 
-      const summaryList = document.createElement("ul");
-      summaryData.summary.forEach((item) => {
-        const listItem = document.createElement("li");
-        listItem.textContent = item;
-        summaryList.appendChild(listItem);
-      });
-      popupContent.appendChild(summaryList);
+      function addWords(li, words, callback) {
+        let wordIndex = 0;
+        function addWord() {
+          if (wordIndex < words.length) {
+            li.textContent += (wordIndex > 0 ? " " : "") + words[wordIndex];
+            wordIndex++;
+            setTimeout(addWord, 50); // Adjust the delay as needed
+          } else {
+            callback();
+          }
+        }
+        addWord();
+      }
 
-      document.getElementById("loading-spinner").style.display = "none"; // Hide spinner
+      addLine();
     })
     .catch((error) => {
       console.error("Error:", error);
@@ -172,11 +185,11 @@ function createLanguageSelect(popupContainer) {
 
   const languages = [
     { code: "vi", name: "Vietnamese" },
-    { code: "ko", name: "Korean" },
+    // { code: "ko", name: "Korean" },
     { code: "en", name: "English" },
-    { code: "es", name: "Spanish" },
-    { code: "fr", name: "French" },
-    { code: "de", name: "German" },
+    // { code: "es", name: "Spanish" },
+    // { code: "fr", name: "French" },
+    // { code: "de", name: "German" },
   ];
 
   languages.forEach((lang) => {
@@ -201,38 +214,6 @@ function createLanguageSelect(popupContainer) {
   popupContainer.appendChild(select);
 }
 
-function createLengthSelect(popupContainer) {
-  const select = document.createElement("select");
-  select.id = "length-select";
-  select.className = "length-select";
-
-  const lengths = [
-    { code: "short", name: "Short" },
-    { code: "medium", name: "Medium" },
-    { code: "long", name: "Long" },
-  ];
-
-  lengths.forEach((len) => {
-    const option = document.createElement("option");
-    option.value = len.code;
-    option.textContent = len.name;
-    select.appendChild(option);
-  });
-
-  const savedLength = loadSelectedLength().then((response) => {
-    select.value = response;
-  });
-  if (savedLength) {
-    select.value = savedLength;
-  }
-
-  select.addEventListener("change", () => {
-    saveSelectedLength(select.value);
-    summarizeText();
-  });
-
-  popupContainer.appendChild(select);
-}
 
 function makeDraggable(element) {
   let isDragging = false;
@@ -302,7 +283,6 @@ function makeFullScreenOnMobile(element) {
   const popupContainer = createPopupContainer();
   createCloseButton(popupContainer);
   createLanguageSelect(popupContainer);
-  createLengthSelect(popupContainer);
   popupContainer.appendChild(createPopupContent());
   popupContainer.appendChild(createLoadingSpinner());
   document.body.appendChild(popupContainer);

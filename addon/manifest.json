@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Summarize AI",
-  "version": "3.0",
+  "version": "3.1",
   "description": "Summarize AI is a tool that summarizes and translate articles and web pages. | Author - TRINHNV",
   "permissions": [
     "activeTab",
