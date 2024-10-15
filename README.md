@@ -1,6 +1,6 @@
 # sumarize-ai
 
-## Public extension for the Summarize AI API
+## Publish extension for the Summarize AI API
 
 In Windows
 ```powershell
