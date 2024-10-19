@@ -13,7 +13,7 @@
     display: none; /* Hidden by default */
     cursor: move; /* Indicate draggable */
     padding-top: 1rem; /* Add padding to make space for the close button */
-    min-height: 20rem; /* Ensure the popup is not too tall */
+    height: 20rem; /* Ensure the popup is not too tall */
     overflow-y: auto; /* Scroll if content overflows */
 }
 

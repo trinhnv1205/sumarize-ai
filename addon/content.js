@@ -6,14 +6,6 @@ function saveSelectedLanguage(language) {
   });
 }
 
-function saveSelectedLength(length) {
-  console.log("saveSelectedLength:", length);
-  browser.runtime.sendMessage({
-    command: "saveSettingLength",
-    length: length,
-  });
-}
-
 function loadSelectedLanguage() {
   return browser.runtime
     .sendMessage({
@@ -21,17 +13,6 @@ function loadSelectedLanguage() {
     })
     .then((response) => {
       console.log("loadSelectedLanguage:", response);
-      return response;
-    });
-}
-
-function loadSelectedLength() {
-  return browser.runtime
-    .sendMessage({
-      command: "loadSettingLength",
-    })
-    .then((response) => {
-      console.log("loadSelectedLength:", response);
       return response;
     });
 }
@@ -79,13 +60,34 @@ function createPopupContent() {
 function createShowPopupButton(popupContainer) {
   const button = document.createElement("button");
   button.id = "show-popup-button";
-  button.className = "show-popup-button";
-  button.textContent = "📄";
-  button.addEventListener("click", () => {
-    popupContainer.style.display = "block";
-    document.getElementById("loading-spinner").style.display = "block";
-    summarizeText();
+  button.className = "material-icon-button";
+  button.innerHTML = "👁️";
+
+  let isDragging = false;
+
+  button.addEventListener("mousedown", (e) => {
+    isDragging = false;
+    const onMouseMove = () => {
+      isDragging = true;
+    };
+    document.addEventListener("mousemove", onMouseMove);
+
+    button.addEventListener(
+      "mouseup",
+      () => {
+        document.removeEventListener("mousemove", onMouseMove);
+        if (!isDragging) {
+          popupContainer.style.display = "block";
+          document.getElementById("loading-spinner").style.display = "block";
+          
+          summarizeText();
+        }
+      },
+      { once: true }
+    );
   });
+
+  makeDraggable(button); // Make the button draggable
   return button;
 }
 
@@ -94,9 +96,6 @@ function fetchWithRetry(url, options, retries = 5, delay = 1000) {
     const attemptFetch = (n) => {
       fetch(url, options)
         .then((response) => {
-          // if (!response.ok) {
-          //   throw new Error("Network response was not ok");
-          // }
           return response.text();
         })
         .then((data) => resolve(data))
@@ -185,11 +184,7 @@ function createLanguageSelect(popupContainer) {
 
   const languages = [
     { code: "vi", name: "Vietnamese" },
-    // { code: "ko", name: "Korean" },
     { code: "en", name: "English" },
-    // { code: "es", name: "Spanish" },
-    // { code: "fr", name: "French" },
-    // { code: "de", name: "German" },
   ];
 
   languages.forEach((lang) => {
@@ -199,12 +194,9 @@ function createLanguageSelect(popupContainer) {
     select.appendChild(option);
   });
 
-  const savedLanguage = loadSelectedLanguage().then((response) => {
+  loadSelectedLanguage().then((response) => {
     select.value = response;
   });
-  if (savedLanguage) {
-    select.value = savedLanguage;
-  }
 
   select.addEventListener("change", () => {
     saveSelectedLanguage(select.value);
@@ -213,7 +205,6 @@ function createLanguageSelect(popupContainer) {
 
   popupContainer.appendChild(select);
 }
-
 
 function makeDraggable(element) {
   let isDragging = false;
@@ -258,6 +249,56 @@ function makeDraggable(element) {
   });
 }
 
+function makeDraggableWithClick(element) {
+  let isDragging = false;
+  let offsetX, offsetY;
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
+
+  function onMouseMove(e) {
+    if (isDragging) {
+      const newX = Math.max(
+        0,
+        Math.min(e.clientX - offsetX, screenWidth - element.offsetWidth)
+      );
+      const newY = Math.max(
+        0,
+        Math.min(e.clientY - offsetY, screenHeight - element.offsetHeight)
+      );
+      element.style.left = `${newX}px`;
+      element.style.top = `${newY}px`;
+      element.style.bottom = "auto";
+      element.style.right = "auto";
+    }
+  }
+
+  function onMouseUp() {
+    if (isDragging) {
+      isDragging = false;
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+
+      localStorage.setItem("popup-left", element.style.left);
+      localStorage.setItem("popup-top", element.style.top);
+    }
+  }
+
+  element.addEventListener("mousedown", (e) => {
+    isDragging = true;
+    element.isDragging = false;
+    offsetX = e.clientX - element.getBoundingClientRect().left;
+    offsetY = e.clientY - element.getBoundingClientRect().top;
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  });
+
+  element.addEventListener("click", (e) => {
+    if (isDragging) {
+      element.isDragging = true;
+    }
+  });
+}
+
 function makeZIndexOnTop(element) {
   element.style.zIndex = "9999";
 }
@@ -291,7 +332,7 @@ function makeFullScreenOnMobile(element) {
   document.body.appendChild(showPopupButton);
 
   makeDraggable(popupContainer);
-  makeDraggable(showPopupButton);
+  makeDraggableWithClick(showPopupButton);
   makeZIndexOnTop(popupContainer);
   makeZIndexOnTop(showPopupButton);
   makeFullScreenOnMobile(popupContainer);
